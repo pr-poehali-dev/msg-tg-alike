@@ -15,6 +15,17 @@ interface Chat {
   unread: number;
   online: boolean;
   encrypted: boolean;
+  isGroup: boolean;
+  topics?: Topic[];
+}
+
+interface Topic {
+  id: number;
+  name: string;
+  icon: string;
+  unread: number;
+  lastMessage: string;
+  color: string;
 }
 
 interface Message {
@@ -23,6 +34,7 @@ interface Message {
   time: string;
   isMine: boolean;
   status: 'sent' | 'delivered' | 'read';
+  topicId?: number;
 }
 
 const MOCK_CHATS: Chat[] = [
@@ -34,7 +46,8 @@ const MOCK_CHATS: Chat[] = [
     time: '14:32',
     unread: 3,
     online: true,
-    encrypted: true
+    encrypted: true,
+    isGroup: false
   },
   {
     id: 2,
@@ -44,7 +57,42 @@ const MOCK_CHATS: Chat[] = [
     time: '12:15',
     unread: 0,
     online: false,
-    encrypted: true
+    encrypted: true,
+    isGroup: true,
+    topics: [
+      {
+        id: 1,
+        name: 'Общее',
+        icon: 'MessageSquare',
+        unread: 2,
+        lastMessage: 'Обсуждение общих вопросов',
+        color: 'from-blue-500 to-cyan-500'
+      },
+      {
+        id: 2,
+        name: 'Разработка',
+        icon: 'Code',
+        unread: 5,
+        lastMessage: 'Новый функционал готов к тестированию',
+        color: 'from-green-500 to-emerald-500'
+      },
+      {
+        id: 3,
+        name: 'Дизайн',
+        icon: 'Palette',
+        unread: 0,
+        lastMessage: 'Макеты обновлены',
+        color: 'from-pink-500 to-rose-500'
+      },
+      {
+        id: 4,
+        name: 'Маркетинг',
+        icon: 'TrendingUp',
+        unread: 3,
+        lastMessage: 'Статистика за неделю',
+        color: 'from-orange-500 to-amber-500'
+      }
+    ]
   },
   {
     id: 3,
@@ -54,7 +102,8 @@ const MOCK_CHATS: Chat[] = [
     time: 'вчера',
     unread: 1,
     online: false,
-    encrypted: true
+    encrypted: true,
+    isGroup: false
   },
   {
     id: 4,
@@ -64,7 +113,8 @@ const MOCK_CHATS: Chat[] = [
     time: 'вчера',
     unread: 0,
     online: true,
-    encrypted: true
+    encrypted: true,
+    isGroup: false
   },
   {
     id: 5,
@@ -74,7 +124,26 @@ const MOCK_CHATS: Chat[] = [
     time: '2 дня',
     unread: 5,
     online: false,
-    encrypted: true
+    encrypted: true,
+    isGroup: true,
+    topics: [
+      {
+        id: 5,
+        name: 'События',
+        icon: 'Calendar',
+        unread: 2,
+        lastMessage: 'Планы на выходные',
+        color: 'from-purple-500 to-violet-500'
+      },
+      {
+        id: 6,
+        name: 'Фото',
+        icon: 'Image',
+        unread: 3,
+        lastMessage: 'Фотки с прогулки',
+        color: 'from-indigo-500 to-blue-500'
+      }
+    ]
   }
 ];
 
@@ -117,10 +186,12 @@ const MOCK_MESSAGES: Message[] = [
 ];
 
 function Index() {
-  const [selectedChat, setSelectedChat] = useState<Chat>(MOCK_CHATS[0]);
+  const [selectedChat, setSelectedChat] = useState<Chat>(MOCK_CHATS[1]);
   const [messages] = useState<Message[]>(MOCK_MESSAGES);
   const [messageText, setMessageText] = useState('');
   const [activeTab, setActiveTab] = useState<'chats' | 'contacts' | 'settings'>('chats');
+  const [selectedTopic, setSelectedTopic] = useState<Topic | null>(null);
+  const [showTopics, setShowTopics] = useState(true);
 
   return (
     <div className="flex h-screen bg-gradient-to-br from-purple-50 to-blue-50">
@@ -248,10 +319,101 @@ function Index() {
         </ScrollArea>
       </div>
 
+      {/* Topics Panel (for groups) */}
+      {selectedChat.isGroup && showTopics && (
+        <div className="w-80 bg-gradient-to-br from-purple-50 to-pink-50 border-r border-purple-200 flex flex-col animate-slide-in-left">
+          <div className="p-6 border-b border-purple-200 bg-white/50 backdrop-blur-sm">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                Темы группы
+              </h2>
+              <Button size="icon" variant="ghost" className="rounded-full hover:bg-purple-100">
+                <Icon name="Plus" size={18} />
+              </Button>
+            </div>
+            <p className="text-sm text-gray-600">Организуйте обсуждения по темам</p>
+          </div>
+
+          <ScrollArea className="flex-1 p-3">
+            <div className="space-y-2">
+              {selectedChat.topics?.map((topic) => (
+                <div
+                  key={topic.id}
+                  onClick={() => setSelectedTopic(topic)}
+                  className={`p-4 rounded-2xl cursor-pointer transition-all hover:shadow-md ${
+                    selectedTopic?.id === topic.id
+                      ? `bg-gradient-to-r ${topic.color} text-white shadow-lg scale-105`
+                      : 'bg-white hover:bg-purple-50'
+                  }`}
+                >
+                  <div className="flex items-start gap-3">
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                      selectedTopic?.id === topic.id
+                        ? 'bg-white/20'
+                        : `bg-gradient-to-r ${topic.color}`
+                    }`}>
+                      <Icon 
+                        name={topic.icon as any} 
+                        size={20} 
+                        className={selectedTopic?.id === topic.id ? 'text-white' : 'text-white'}
+                      />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className={`font-semibold ${
+                          selectedTopic?.id === topic.id ? 'text-white' : 'text-gray-900'
+                        }`}>
+                          {topic.name}
+                        </span>
+                        {topic.unread > 0 && (
+                          <Badge className={`${
+                            selectedTopic?.id === topic.id
+                              ? 'bg-white/30 text-white'
+                              : 'bg-gradient-to-r from-purple-500 to-pink-500 text-white'
+                          }`}>
+                            {topic.unread}
+                          </Badge>
+                        )}
+                      </div>
+                      <p className={`text-xs truncate ${
+                        selectedTopic?.id === topic.id ? 'text-white/80' : 'text-gray-600'
+                      }`}>
+                        {topic.lastMessage}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </ScrollArea>
+
+          <div className="p-4 bg-white/50 backdrop-blur-sm border-t border-purple-200">
+            <Button 
+              variant="outline" 
+              className="w-full rounded-full border-purple-300 hover:bg-purple-100 text-purple-700"
+              onClick={() => setShowTopics(false)}
+            >
+              <Icon name="ChevronLeft" size={16} className="mr-2" />
+              Скрыть темы
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Chat Window */}
       <div className="flex-1 flex flex-col bg-white animate-scale-in">
         {/* Chat Header */}
         <div className="h-20 bg-gradient-to-r from-purple-600 to-pink-600 px-6 flex items-center justify-between text-white shadow-lg">
+          {selectedChat.isGroup && !showTopics && (
+            <Button
+              size="icon"
+              variant="ghost"
+              className="text-white hover:bg-white/20 rounded-full mr-2"
+              onClick={() => setShowTopics(true)}
+            >
+              <Icon name="Menu" size={20} />
+            </Button>
+          )}
           <div className="flex items-center gap-4">
             <Avatar className="w-12 h-12 ring-2 ring-white/50">
               <AvatarImage src="" />
@@ -260,7 +422,22 @@ function Index() {
               </AvatarFallback>
             </Avatar>
             <div>
-              <h2 className="font-semibold text-lg">{selectedChat.name}</h2>
+              <div className="flex items-center gap-2">
+                <h2 className="font-semibold text-lg">{selectedChat.name}</h2>
+                {selectedChat.isGroup && (
+                  <Badge className="bg-white/20 text-white text-xs">
+                    <Icon name="Users" size={12} className="mr-1" />
+                    Группа
+                  </Badge>
+                )}
+              </div>
+              {selectedTopic && (
+                <div className="flex items-center gap-2 text-sm text-white/90 mt-1">
+                  <Icon name={selectedTopic.icon as any} size={14} />
+                  <span>{selectedTopic.name}</span>
+                </div>
+              )}
+              {!selectedTopic && (
               <div className="flex items-center gap-2 text-sm text-white/80">
                 {selectedChat.online ? (
                   <>
@@ -278,6 +455,7 @@ function Index() {
                   </>
                 )}
               </div>
+              )}
             </div>
           </div>
           
