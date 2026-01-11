@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import Icon from '@/components/ui/icon';
+import { AddMembersDialog } from '@/components/AddMembersDialog';
 
 interface Chat {
   id: number;
@@ -192,6 +193,7 @@ function Index() {
   const [activeTab, setActiveTab] = useState<'chats' | 'contacts' | 'settings'>('chats');
   const [selectedTopic, setSelectedTopic] = useState<Topic | null>(null);
   const [showTopics, setShowTopics] = useState(true);
+  const [showAddMembers, setShowAddMembers] = useState(false);
 
   return (
     <div className="flex h-screen bg-gradient-to-br from-purple-50 to-blue-50">
@@ -460,6 +462,16 @@ function Index() {
           </div>
           
           <div className="flex items-center gap-2">
+            {selectedChat.isGroup && (
+              <Button 
+                size="icon" 
+                variant="ghost" 
+                className="text-white hover:bg-white/20 rounded-full"
+                onClick={() => setShowAddMembers(true)}
+              >
+                <Icon name="UserPlus" size={20} />
+              </Button>
+            )}
             <Button size="icon" variant="ghost" className="text-white hover:bg-white/20 rounded-full">
               <Icon name="Phone" size={20} />
             </Button>
@@ -540,6 +552,12 @@ function Index() {
           </div>
         </div>
       </div>
+
+      <AddMembersDialog 
+        open={showAddMembers} 
+        onOpenChange={setShowAddMembers}
+        groupName={selectedChat.isGroup ? selectedChat.name : undefined}
+      />
     </div>
   );
 }
